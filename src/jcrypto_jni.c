@@ -13,24 +13,24 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-JNIEXPORT jint JNICALL Java_br_com_cpqd_jcrypto_jni_JCrypto_aes_1size
+JNIEXPORT jint JNICALL Java_br_com_dojot_jcrypto_jni_JCrypto_aes_1size
   (JNIEnv *env, jclass clazz) {
 	return sizeof(aes_ctx_st);
 }
 
 
-JNIEXPORT jint JNICALL Java_br_com_cpqd_jcrypto_jni_JCrypto_aes_1gcm_1size
+JNIEXPORT jint JNICALL Java_br_com_dojot_jcrypto_jni_JCrypto_aes_1gcm_1size
   (JNIEnv *env, jclass clazz) {
 	return sizeof(aes_gcm_ctx_st);
 }
 
-JNIEXPORT errno_t JNICALL Java_br_com_cpqd_jcrypto_jni_JCrypto_aes_1gcm_1aad
+JNIEXPORT errno_t JNICALL Java_br_com_dojot_jcrypto_jni_JCrypto_aes_1gcm_1aad
   (JNIEnv *env, jclass clazz, jobject ctx_buf, jbyteArray aad_buf) {
 	errno_t result;
 	aes_gcm_ctx_st *ctx = (aes_gcm_ctx_st *) (*env)->GetDirectBufferAddress(env, ctx_buf);
 	unsigned char *aad;
 	size_t aad_len;
-	
+
 	/* Check if context is valid */
 	result = gcmCheckContext(ctx);
 	if(result != SUCCESSFULL_OPERATION) {
@@ -64,7 +64,7 @@ FAIL:
 	return result;
 }
 
-JNIEXPORT errno_t JNICALL Java_br_com_cpqd_jcrypto_jni_JCrypto_aes_1gcm_1init
+JNIEXPORT errno_t JNICALL Java_br_com_dojot_jcrypto_jni_JCrypto_aes_1gcm_1init
   (JNIEnv *env, jclass clazz, jobject ctx_buf, jbyteArray iv_buf, jint tag_len, jint mode) {
 	errno_t result;
 	aes_gcm_ctx_st *ctx = (aes_gcm_ctx_st *) (*env)->GetDirectBufferAddress(env, ctx_buf);
@@ -76,7 +76,7 @@ JNIEXPORT errno_t JNICALL Java_br_com_cpqd_jcrypto_jni_JCrypto_aes_1gcm_1init
 	if(result != SUCCESSFULL_OPERATION) {
 		goto FAIL;
 	}
-	
+
 	/* If there is any IV, maps it to C variable */
 	if(iv_buf != NULL) {
 		len = (int) (*env)->GetArrayLength(env, iv_buf);
@@ -98,7 +98,7 @@ FAIL:
 	return result;
 }
 
-JNIEXPORT errno_t JNICALL Java_br_com_cpqd_jcrypto_jni_JCrypto_aes_1init
+JNIEXPORT errno_t JNICALL Java_br_com_dojot_jcrypto_jni_JCrypto_aes_1init
   (JNIEnv *env, jclass clazz, jobject ctx_buf, jbyteArray iv_buf, jint mode) {
 	errno_t result;
 	aes_ctx_st *ctx = (aes_ctx_st *) (*env)->GetDirectBufferAddress(env, ctx_buf);
@@ -113,7 +113,7 @@ JNIEXPORT errno_t JNICALL Java_br_com_cpqd_jcrypto_jni_JCrypto_aes_1init
 		len = 0;
 		iv = NULL;
 	}
-	
+
 	result = aes_init(ctx, iv, len, mode);
 	if(result != SUCCESSFULL_OPERATION) {
 		memset(ctx, 0, sizeof(aes_ctx_st));
@@ -122,20 +122,20 @@ JNIEXPORT errno_t JNICALL Java_br_com_cpqd_jcrypto_jni_JCrypto_aes_1init
 	if(iv_buf != NULL) {
 		(*env)->ReleasePrimitiveArrayCritical(env, iv_buf, iv, JNI_ABORT);
 	}
-	
+
 	return result;
 }
 
 
-JNIEXPORT errno_t JNICALL Java_br_com_cpqd_jcrypto_jni_JCrypto_aes_1enc
- (JNIEnv *env, jclass clazz, jobject ctx_buf, jbyteArray out_buf, jint out_offset, jint out_len, jbyteArray in_buf, 
-	jint in_offset, jint in_len, jint blockIndex) { 
+JNIEXPORT errno_t JNICALL Java_br_com_dojot_jcrypto_jni_JCrypto_aes_1enc
+ (JNIEnv *env, jclass clazz, jobject ctx_buf, jbyteArray out_buf, jint out_offset, jint out_len, jbyteArray in_buf,
+	jint in_offset, jint in_len, jint blockIndex) {
 	errno_t result;
 	aes_ctx_st *ctx = (aes_ctx_st *) (*env)->GetDirectBufferAddress(env, ctx_buf);
 	unsigned char *input;
 	unsigned char *output;
 	int in_alloc = 0, out_alloc = 0;
-	
+
 	/* Check if context is valid */
 	result = aesCheckContext(ctx);
 	if(result != SUCCESSFULL_OPERATION) {
@@ -149,21 +149,21 @@ JNIEXPORT errno_t JNICALL Java_br_com_cpqd_jcrypto_jni_JCrypto_aes_1enc
 		in_alloc = 1;
 		(*env)->GetByteArrayRegion(env, in_buf, in_offset, in_len, (jbyte *) input);
 	}
-	
+
 	if (out_offset == 0 && out_len == (*env)->GetArrayLength(env, out_buf)) {
 		output = (unsigned char *) (*env)->GetByteArrayElements(env, out_buf, NULL);
 	} else {
 		output = malloc(out_len);
 		out_alloc = 1;
 	}
-	
+
 	/* Encrypts or decrypts input according to the mode that was set in the context */
 	if (ctx->direction == DIR_ENCRYPT) {
 		aes_encrypt(ctx, output, out_len, input, in_len);
 	} else if(ctx->direction == DIR_DECRYPT) {
 		aes_decrypt(ctx, output, out_len, input, in_len);
 	}
-	/* Releases variables */	
+	/* Releases variables */
 	if (in_alloc == 1) {
 		result |= memset_s(input, sizeof(unsigned char) * in_len, 0, sizeof(unsigned char) * in_len);
 		free(input);
@@ -187,10 +187,10 @@ FAIL:
 	return result;
 }
 
-JNIEXPORT errno_t JNICALL Java_br_com_cpqd_jcrypto_jni_JCrypto_aes_1gcm_1enc
- (JNIEnv *env, jclass clazz, jobject ctx_buf, jbyteArray out_buf, jint out_offset, jint out_len, jbyteArray in_buf, 
-	jint in_offset, jint in_len, jint blockIndex) { 
-	errno_t result;	
+JNIEXPORT errno_t JNICALL Java_br_com_dojot_jcrypto_jni_JCrypto_aes_1gcm_1enc
+ (JNIEnv *env, jclass clazz, jobject ctx_buf, jbyteArray out_buf, jint out_offset, jint out_len, jbyteArray in_buf,
+	jint in_offset, jint in_len, jint blockIndex) {
+	errno_t result;
 	aes_gcm_ctx_st *ctx = (aes_gcm_ctx_st *) (*env)->GetDirectBufferAddress(env, ctx_buf);
 	unsigned char *input;
 	unsigned char *output;
@@ -201,7 +201,7 @@ JNIEXPORT errno_t JNICALL Java_br_com_cpqd_jcrypto_jni_JCrypto_aes_1gcm_1enc
 	if(result != SUCCESSFULL_OPERATION) {
 		goto FAIL;
 	}
-	
+
 	/* Check if there exists the number of bytes requested to be processed*/
 	if(in_len + in_offset > (*env)->GetArrayLength(env, in_buf)) {
 		result = INVALID_PARAMETER;
@@ -227,7 +227,7 @@ JNIEXPORT errno_t JNICALL Java_br_com_cpqd_jcrypto_jni_JCrypto_aes_1gcm_1enc
 		output = malloc(out_len);
 		out_alloc = 1;
 	}
-	/* Input processing */	
+	/* Input processing */
 	if (ctx->aes->direction == DIR_ENCRYPT) {
 		result = aes_gcm_encrypt(ctx, output, input, in_len, blockIndex);
 		if(result != SUCCESSFULL_OPERATION) {
@@ -258,23 +258,23 @@ FAIL_CLEAN:
 	if(out_alloc == 1) {
 		free(output);
 	}
-FAIL:	
+FAIL:
 	/* If it is the last block, then context should be destroyed */
 	if(blockIndex & LAST_BLOCK || result != SUCCESSFULL_OPERATION) {
 		memset(ctx, 0, sizeof(aes_gcm_ctx_st));
-	}	
+	}
 	return result;
 }
 
 /* Performs aes key expansion algorithm */
-JNIEXPORT errno_t JNICALL Java_br_com_cpqd_jcrypto_jni_JCrypto_aes_1key_1exp
+JNIEXPORT errno_t JNICALL Java_br_com_dojot_jcrypto_jni_JCrypto_aes_1key_1exp
   (JNIEnv *env, jclass clazz, jobject ctx_buf, jbyteArray key_buf, jint direction) {
 	errno_t result;
 	aes_ctx_st *ctx = (aes_ctx_st *) (*env)->GetDirectBufferAddress(env, ctx_buf);
 	size_t len = (int) (*env)->GetArrayLength(env, key_buf);
 	unsigned char *key = (unsigned char *) (*env)->GetPrimitiveArrayCritical(env, key_buf, NULL);
 
-	/* Check if key has the correct length */	
+	/* Check if key has the correct length */
 	if(len != AES128_KEY_LEN && len != AES192_KEY_LEN && len != AES256_KEY_LEN) {
 		result = INVALID_PARAMETER;
 		goto FAIL;
@@ -288,7 +288,7 @@ FAIL:
 }
 
 /* Performs gcm key expansion, which is the exact same algorithm as aes key expansion but uses a different context */
-JNIEXPORT errno_t JNICALL Java_br_com_cpqd_jcrypto_jni_JCrypto_aes_1gcm_1key_1exp
+JNIEXPORT errno_t JNICALL Java_br_com_dojot_jcrypto_jni_JCrypto_aes_1gcm_1key_1exp
   (JNIEnv *env, jclass clazz, jobject ctx_buf, jbyteArray key_buf, jint direction) {
 	errno_t result;
 	aes_gcm_ctx_st *ctx = (aes_gcm_ctx_st *) (*env)->GetDirectBufferAddress(env, ctx_buf);
@@ -300,9 +300,9 @@ JNIEXPORT errno_t JNICALL Java_br_com_cpqd_jcrypto_jni_JCrypto_aes_1gcm_1key_1ex
 	if(key == NULL) {
 		result = INVALID_PARAMETER;
 		goto FAIL;
-	}	
+	}
 
-	/* Check if key has the correct length */	
+	/* Check if key has the correct length */
 	if(len != AES128_KEY_LEN && len != AES192_KEY_LEN && len != AES256_KEY_LEN) {
 		result = INVALID_PARAMETER;
 		goto FAIL_KEY;
